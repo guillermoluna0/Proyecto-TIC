@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misterio en la Tierra Media - Cluedo Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <h1>Misterio en la Tierra Media</h1>
+            <p id="status-msg">¿Quién robó el Anillo Único?</p>
+        </header>
+
+        <main>
+            <section id="map-section">
+                <div class="map-grid" id="map">
+                    </div>
+            </section>
+
+            <section id="side-panel">
+                <div class="notebook">
+                    <h3>Libro de Sabios (Notas)</h3>
+                    <div id="notes-list">
+                        </div>
+                </div>
+
+                <div class="controls">
+                    <button id="btn-accuse" class="btn-danger">ACUSACIÓN FINAL</button>
+                    <div class="log" id="game-log">
+                        <p>Bienvenido, detective. Haz clic en una región del mapa para investigar.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Investigar en [Lugar]</h2>
+            <div class="selectors">
+                <label>Sospechoso:</label>
+                <select id="select-char"></select>
+                
+                <label>Objeto:</label>
+                <select id="select-weapon"></select>
+            </div>
+            <div class="modal-buttons">
+                <button id="btn-confirm-action" class="btn-action">Sugerir</button>
+                <button id="btn-cancel" class="btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-row">
+        <div id="user-info" class="hidden">
+            <img id="user-pic" src="" alt="avatar">
+            <span id="user-name"></span>
+        </div>
+        <button id="btn-login" class="btn-action">Iniciar sesión con Google</button>
+        <button id="btn-logout" class="btn-cancel hidden">Cerrar sesión</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
