@@ -192,15 +192,20 @@ document.getElementById('btn-confirm-action').onclick = () => {
     const char = document.getElementById('select-char').value;
     const weapon = document.getElementById('select-weapon').value;
     const room = game.isAccusing ? game.solution.room : game.currentRoom; // En acusación usamos el select si quisiéramos, pero simplificamos a que debes estar en el sitio o elegirlo.
+    // Mostrar la acción del jugador en el centro para que sea claramente visible
+    showCenterMessage(game.isAccusing ? `ACUSACIÓN: ${char} con ${weapon} en ${game.currentRoom}` : `Sugerencia: ${char} con ${weapon} en ${room}`, 1400);
 
-    if (game.isAccusing) {
-        // En una acusación final real preguntaríamos también la sala
-        // Para este MVP, usaremos la última sala visitada como parte de la acusación
-        processAccusation(char, weapon, game.currentRoom);
-    } else {
-        processSuggestion(char, weapon, room);
-    }
-    document.getElementById('modal').classList.add('hidden');
+    // Procesar la acción tras un pequeño retardo para que el jugador vea el mensaje
+    setTimeout(() => {
+        if (game.isAccusing) {
+            // En una acusación final real preguntaríamos también la sala
+            // Para este MVP, usaremos la última sala visitada como parte de la acusación
+            processAccusation(char, weapon, game.currentRoom);
+        } else {
+            processSuggestion(char, weapon, room);
+        }
+        document.getElementById('modal').classList.add('hidden');
+    }, 450);
 };
 
 function processSuggestion(c, w, r) {
@@ -219,6 +224,7 @@ function processSuggestion(c, w, r) {
         log(`La máquina no tiene ninguna de esas cartas... ¡Interesante!`);
         showMachineAction('La máquina no puede refutar. ¡Avanza el turno!', 2500);
     }
+        showCenterMessage(`Sugerencia: ${c} con ${w} en ${r}.`, 1800);
 }
 
 // Muestra una notificación grande con la acción de la máquina
@@ -233,6 +239,9 @@ function showMachineAction(text, duration = 2000) {
     // eslint-disable-next-line no-unused-expressions
     banner.offsetHeight;
     banner.classList.add('show');
+
+    // mostrar también en centro para máxima visibilidad
+    showCenterMessage(text, Math.max(duration, 1400));
 
     setTimeout(() => {
         banner.classList.remove('show');
