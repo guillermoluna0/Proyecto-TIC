@@ -176,6 +176,68 @@ button {
 #user-info { display: flex; gap: 8px; align-items: center; background: #fff; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; }
 #user-info img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
 
+/* Banner de acción de la máquina */
+.machine-action {
+    position: fixed;
+    left: 50%;
+    top: 40%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 24px 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    z-index: 2000;
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.machine-action.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.machine-action.hide {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+}
+
+#machine-action-text { font-weight: bold; }
+
+/* Banner central para mensajes transitorios del log */
+.center-message {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background: rgba(255,255,255,0.95);
+    color: #222;
+    padding: 18px 28px;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    z-index: 2100;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.center-message.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.center-message.hide {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+#center-message-text { font-weight: 700; }
+
 .selectors { margin: 20px 0; }
 select { width: 100%; padding: 10px; margin-bottom: 15px; }
 

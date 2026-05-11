@@ -34,6 +34,11 @@
                         <p>Bienvenido, detective. Haz clic en una región del mapa para investigar.</p>
                     </div>
                 </div>
+                <div class="ranking" id="ranking-panel">
+                    <h3>Ranking (menos preguntas = mejor)</h3>
+                    <ol id="ranking-list"></ol>
+                    <button id="btn-clear-ranking" class="btn-cancel">Limpiar ranking</button>
+                </div>
             </section>
         </main>
     </div>
@@ -62,6 +67,16 @@
         </div>
         <button id="btn-login" class="btn-action">Iniciar sesión con Google</button>
         <button id="btn-logout" class="btn-cancel hidden">Cerrar sesión</button>
+    </div>
+
+    <!-- Banner para mostrar la acción de la máquina -->
+    <div id="machine-action-banner" class="machine-action hidden">
+        <div id="machine-action-text"></div>
+    </div>
+
+    <!-- Banner central para mensajes del log -->
+    <div id="center-message" class="center-message hidden">
+        <div id="center-message-text"></div>
     </div>
 
     <script type="module" src="script.js"></script>

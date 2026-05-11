@@ -11,6 +11,8 @@ let game = {
     currentRoom: null,
     isAccusing: false
 };
+// Contador de sugerencias realizadas por el jugador en la partida actual
+let suggestionCount = 0;
 // --- Firebase (CDN modular) ---
 // Sustituye los valores en firebaseConfig por los de tu proyecto
 const firebaseConfig = {
@@ -24,6 +26,12 @@ let fb = null;
 
 async function initFirebaseAuth() {
     try {
+        // Validación básica del config
+        if (!firebaseConfig || firebaseConfig.apiKey === 'REPLACE_WITH_API_KEY') {
+            console.error('firebaseConfig no está configurado. Reemplaza los valores en script.js');
+            alert('firebaseConfig no está configurado en script.js. Rellena las credenciales de tu proyecto Firebase.');
+            return;
+        }
         const appModule = await import('https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js');
         const authModule = await import('https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js');
 
@@ -41,7 +49,8 @@ async function initFirebaseAuth() {
                 await fb.authModule.signInWithPopup(fb.auth, provider);
             } catch (err) {
                 console.error('Login error', err);
-                alert('Error al iniciar sesión. Mira la consola.');
+                const msg = (err && err.message) ? err.message : String(err);
+                alert('Error al iniciar sesión. Detalle: ' + msg + '\nMira la consola para más información.');
             }
         });
 
@@ -56,6 +65,9 @@ async function initFirebaseAuth() {
         fb.authModule.onAuthStateChanged(fb.auth, user => {
             updateAuthUI(user);
         });
+
+        // Exponer para depuración en consola
+        window.__fb = fb;
 
     } catch (err) {
         console.error('No se pudo cargar Firebase desde CDN:', err);
@@ -103,6 +115,9 @@ function init() {
 
     game.playerHand = deck.slice(0, Math.floor(deck.length / 2));
     game.machineHand = deck.slice(Math.floor(deck.length / 2));
+
+    // reset contador de sugerencias
+    suggestionCount = 0;
 
     renderMap();
     renderNotebook();
@@ -190,6 +205,7 @@ document.getElementById('btn-confirm-action').onclick = () => {
 
 function processSuggestion(c, w, r) {
     log(`Sugerencia: ${c} con ${w} en ${r}.`);
+    suggestionCount += 1;
     
     // La máquina intenta refutar
     let possibleCards = game.machineHand.filter(card => card === c || card === w || card === r);
@@ -197,9 +213,34 @@ function processSuggestion(c, w, r) {
     if (possibleCards.length > 0) {
         let shown = possibleCards[Math.floor(Math.random() * possibleCards.length)];
         log(`La máquina te enseña: <b>${shown}</b>. No es parte del crimen.`);
+        // Mostrar acción de la máquina
+        showMachineAction(`La máquina muestra: ${shown}`, 2500);
     } else {
         log(`La máquina no tiene ninguna de esas cartas... ¡Interesante!`);
+        showMachineAction('La máquina no puede refutar. ¡Avanza el turno!', 2500);
     }
+}
+
+// Muestra una notificación grande con la acción de la máquina
+function showMachineAction(text, duration = 2000) {
+    const banner = document.getElementById('machine-action-banner');
+    const content = document.getElementById('machine-action-text');
+    if (!banner || !content) return;
+    content.textContent = text;
+    banner.classList.remove('hidden');
+    banner.classList.remove('hide');
+    // force reflow para aplicar la animación si ya estaba visible
+    // eslint-disable-next-line no-unused-expressions
+    banner.offsetHeight;
+    banner.classList.add('show');
+
+    setTimeout(() => {
+        banner.classList.remove('show');
+        banner.classList.add('hide');
+        setTimeout(() => {
+            banner.classList.add('hidden');
+        }, 350);
+    }, duration);
 }
 
 function processAccusation(c, w, r) {
@@ -210,16 +251,124 @@ function processAccusation(c, w, r) {
 
     if (c === game.solution.char && w === game.solution.weapon && r === game.solution.room) {
         alert(`¡VICTORIA! Has descubierto que fue ${c} en ${r} con ${w}.`);
+        saveResult(true);
         location.reload();
     } else {
         alert(`ERROR. No fue así. La respuesta era: ${game.solution.char} en ${game.solution.room} con ${game.solution.weapon}. HAS PERDIDO.`);
+        saveResult(false);
         location.reload();
     }
 }
 
+// --- Ranking: almacenar y renderizar ---
+function getRankings() {
+    try {
+        const raw = localStorage.getItem('tic_rankings');
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        console.error('Error parseando rankings:', e);
+        return [];
+    }
+}
+
+function saveRankings(list) {
+    localStorage.setItem('tic_rankings', JSON.stringify(list));
+}
+
+function saveResult(won) {
+    const rankings = getRankings();
+    // usuario: si está logueado usar nombre/email, si no 'Anónimo'
+    let userName = 'Anónimo';
+    try {
+        const user = window.__fb?.auth?.currentUser;
+        if (user) userName = user.displayName || user.email || 'Usuario';
+    } catch(e) {}
+
+    const entry = {
+        user: userName,
+        questions: suggestionCount,
+        won: won,
+        timestamp: Date.now()
+    };
+
+    rankings.push(entry);
+    // ordenar por menos preguntas (asc)
+    rankings.sort((a,b) => a.questions - b.questions || a.timestamp - b.timestamp);
+    // mantener top 20
+    saveRankings(rankings.slice(0,20));
+    // actualizar vista
+    renderRanking();
+}
+
+function renderRanking() {
+    const list = getRankings();
+    const ol = document.getElementById('ranking-list');
+    if (!ol) return;
+    ol.innerHTML = '';
+    list.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = `${item.user} — ${item.questions} pregunta(s)` + (item.won ? ' 🏆' : '');
+        ol.appendChild(li);
+    });
+}
+
+// handler para limpiar ranking
+document.addEventListener('DOMContentLoaded', () => {
+    const btnClear = document.getElementById('btn-clear-ranking');
+    if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            if (!confirm('¿Borrar todo el ranking?')) return;
+            localStorage.removeItem('tic_rankings');
+            renderRanking();
+        });
+    }
+    // render al cargar
+    renderRanking();
+});
+
 function log(msg) {
     const logDiv = document.getElementById('game-log');
     logDiv.innerHTML = `<p>> ${msg}</p>` + logDiv.innerHTML;
+}
+
+// Mostrar mensaje grande en el centro temporalmente
+let _centerMsgTimer = null;
+function showCenterMessage(msg, duration = 1800) {
+    const wrapper = document.getElementById('center-message');
+    const content = document.getElementById('center-message-text');
+    if (!wrapper || !content) return;
+
+    // Si ya hay un timer en curso, clear y mostrar el nuevo inmediatamente
+    if (_centerMsgTimer) {
+        clearTimeout(_centerMsgTimer);
+        _centerMsgTimer = null;
+    }
+
+    content.textContent = msg;
+    wrapper.classList.remove('hidden');
+    wrapper.classList.remove('hide');
+    // force reflow
+    // eslint-disable-next-line no-unused-expressions
+    wrapper.offsetHeight;
+    wrapper.classList.add('show');
+
+    _centerMsgTimer = setTimeout(() => {
+        wrapper.classList.remove('show');
+        wrapper.classList.add('hide');
+        setTimeout(() => {
+            wrapper.classList.add('hidden');
+            _centerMsgTimer = null;
+        }, 240);
+    }, duration);
+}
+
+// Modificamos log para además mostrar en el centro
+const _origLog = log;
+function log(msg) {
+    const logDiv = document.getElementById('game-log');
+    logDiv.innerHTML = `<p>> ${msg}</p>` + logDiv.innerHTML;
+    // mostrar en centro (si es relevante)
+    showCenterMessage(msg);
 }
 
 init();
