@@ -16,10 +16,14 @@ let suggestionCount = 0;
 // --- Firebase (CDN modular) ---
 // Sustituye los valores en firebaseConfig por los de tu proyecto
 const firebaseConfig = {
-    apiKey: "REPLACE_WITH_API_KEY",
-    authDomain: "REPLACE_WITH_PROJECT.firebaseapp.com",
-    projectId: "REPLACE_WITH_PROJECT_ID",
-    appId: "REPLACE_WITH_APP_ID"
+  apiKey: "AIzaSyDBnfDeDvBhbh3cMz7fweOCpbr2iGeMTf4",
+  authDomain: "guillermo-ed821.firebaseapp.com",
+  databaseURL: "https://guillermo-ed821-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "guillermo-ed821",
+  storageBucket: "guillermo-ed821.firebasestorage.app",
+  messagingSenderId: "681384794020",
+  appId: "1:681384794020:web:e668b41d9ea21a059c1331",
+  measurementId: "G-P62E23V4KF"
 };
 
 let fb = null;
@@ -27,7 +31,7 @@ let fb = null;
 async function initFirebaseAuth() {
     try {
         // Validación básica del config
-        if (!firebaseConfig || firebaseConfig.apiKey === 'REPLACE_WITH_API_KEY') {
+        if (!firebaseConfig || firebaseConfig.apiKey === "AIzaSyDBnfDeDvBhbh3cMz7fweOCpbr2iGeMTf4") {
             console.error('firebaseConfig no está configurado. Reemplaza los valores en script.js');
             alert('firebaseConfig no está configurado en script.js. Rellena las credenciales de tu proyecto Firebase.');
             return;
