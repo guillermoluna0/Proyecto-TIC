@@ -29,6 +29,8 @@ npx http-server -c-1 .
 python3 -m http.server 5500
 ```
 
+> No abras el archivo directamente con `file://`. Firebase Auth no funciona bien desde el sistema de archivos; usa `http://localhost` o `http://127.0.0.1`.
+
 6. Abre la página, haz clic en "Iniciar sesión con Google" y acepta la cuenta. La UI mostrará nombre y avatar.
 
 Notas:

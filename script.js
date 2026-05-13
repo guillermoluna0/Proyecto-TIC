@@ -31,11 +31,7 @@ let fb = null;
 async function initFirebaseAuth() {
     try {
         // Validación básica del config
-        if (!firebaseConfig || firebaseConfig.apiKey === "AIzaSyDBnfDeDvBhbh3cMz7fweOCpbr2iGeMTf4") {
-            console.error('firebaseConfig no está configurado. Reemplaza los valores en script.js');
-            alert('firebaseConfig no está configurado en script.js. Rellena las credenciales de tu proyecto Firebase.');
-            return;
-        }
+        
         const appModule = await import('https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js');
         const authModule = await import('https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js');
 
@@ -43,28 +39,6 @@ async function initFirebaseAuth() {
         const auth = authModule.getAuth(app);
 
         fb = { auth, authModule };
-
-        const btnLogin = document.getElementById('btn-login');
-        const btnLogout = document.getElementById('btn-logout');
-
-        btnLogin.addEventListener('click', async () => {
-            const provider = new fb.authModule.GoogleAuthProvider();
-            try {
-                await fb.authModule.signInWithPopup(fb.auth, provider);
-            } catch (err) {
-                console.error('Login error', err);
-                const msg = (err && err.message) ? err.message : String(err);
-                alert('Error al iniciar sesión. Detalle: ' + msg + '\nMira la consola para más información.');
-            }
-        });
-
-        btnLogout.addEventListener('click', async () => {
-            try {
-                await fb.authModule.signOut(fb.auth);
-            } catch (err) {
-                console.error('Logout error', err);
-            }
-        });
 
         fb.authModule.onAuthStateChanged(fb.auth, user => {
             updateAuthUI(user);
@@ -133,6 +107,8 @@ function init() {
 // --- Renderizado ---
 function renderMap() {
     const mapDiv = document.getElementById('map');
+    if (!mapDiv) return;
+    mapDiv.innerHTML = '';
     DATA.rooms.forEach(room => {
         const div = document.createElement('div');
         div.className = 'location';
@@ -144,6 +120,9 @@ function renderMap() {
 
 function renderNotebook() {
     const container = document.getElementById('notes-list');
+    if (!container) return;
+    container.innerHTML = '';
+
     const sections = [
         { title: "Personajes", items: DATA.chars },
         { title: "Armas", items: DATA.weapons },
@@ -167,9 +146,16 @@ function renderNotebook() {
 function populateSelects() {
     const sChar = document.getElementById('select-char');
     const sWeapon = document.getElementById('select-weapon');
-    
-    DATA.chars.forEach(c => sChar.innerHTML += `<option value="${c}">${c}</option>`);
-    DATA.weapons.forEach(w => sWeapon.innerHTML += `<option value="${w}">${w}</option>`);
+    if (!sChar || !sWeapon) return;
+
+    sChar.innerHTML = '';
+    sWeapon.innerHTML = '';
+    DATA.chars.forEach(c => {
+        sChar.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+    DATA.weapons.forEach(w => {
+        sWeapon.innerHTML += `<option value="${w}">${w}</option>`;
+    });
 }
 
 // --- Acciones ---
@@ -181,36 +167,73 @@ function handleRoomClick(room) {
     document.getElementById('modal').classList.remove('hidden');
 }
 
-document.getElementById('btn-accuse').onclick = () => {
-    game.isAccusing = true;
-    document.getElementById('modal-title').innerText = `ACUSACIÓN FINAL`;
-    document.getElementById('btn-confirm-action').innerText = "¡ACUSAR!";
-    document.getElementById('modal').classList.remove('hidden');
-};
+function setupUI() {
+    const btnAccuse = document.getElementById('btn-accuse');
+    const btnCancel = document.getElementById('btn-cancel');
+    const btnConfirm = document.getElementById('btn-confirm-action');
+    const btnLogin = document.getElementById('btn-login');
+    const btnLogout = document.getElementById('btn-logout');
 
-document.getElementById('btn-cancel').onclick = () => {
-    document.getElementById('modal').classList.add('hidden');
-};
+    if (btnAccuse) {
+        btnAccuse.onclick = () => {
+            game.isAccusing = true;
+            document.getElementById('modal-title').innerText = `ACUSACIÓN FINAL`;
+            document.getElementById('btn-confirm-action').innerText = "¡ACUSAR!";
+            document.getElementById('modal').classList.remove('hidden');
+        };
+    }
 
-document.getElementById('btn-confirm-action').onclick = () => {
-    const char = document.getElementById('select-char').value;
-    const weapon = document.getElementById('select-weapon').value;
-    const room = game.isAccusing ? game.solution.room : game.currentRoom; // En acusación usamos el select si quisiéramos, pero simplificamos a que debes estar en el sitio o elegirlo.
-    // Mostrar la acción del jugador en el centro para que sea claramente visible
-    showCenterMessage(game.isAccusing ? `ACUSACIÓN: ${char} con ${weapon} en ${game.currentRoom}` : `Sugerencia: ${char} con ${weapon} en ${room}`, 1400);
+    if (btnCancel) {
+        btnCancel.onclick = () => {
+            document.getElementById('modal').classList.add('hidden');
+        };
+    }
 
-    // Procesar la acción tras un pequeño retardo para que el jugador vea el mensaje
-    setTimeout(() => {
-        if (game.isAccusing) {
-            // En una acusación final real preguntaríamos también la sala
-            // Para este MVP, usaremos la última sala visitada como parte de la acusación
-            processAccusation(char, weapon, game.currentRoom);
-        } else {
-            processSuggestion(char, weapon, room);
-        }
-        document.getElementById('modal').classList.add('hidden');
-    }, 450);
-};
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            const char = document.getElementById('select-char').value;
+            const weapon = document.getElementById('select-weapon').value;
+            const room = game.isAccusing ? game.solution.room : game.currentRoom;
+            showCenterMessage(game.isAccusing ? `ACUSACIÓN: ${char} con ${weapon} en ${game.currentRoom}` : `Sugerencia: ${char} con ${weapon} en ${room}`, 1400);
+
+            setTimeout(() => {
+                if (game.isAccusing) {
+                    processAccusation(char, weapon, game.currentRoom);
+                } else {
+                    processSuggestion(char, weapon, room);
+                }
+                document.getElementById('modal').classList.add('hidden');
+            }, 450);
+        };
+    }
+
+    if (btnLogin) {
+        btnLogin.addEventListener('click', async () => {
+            if (!fb) {
+                alert('Firebase no está listo aún. Intenta de nuevo dentro de unos segundos.');
+                return;
+            }
+            const provider = new fb.authModule.GoogleAuthProvider();
+            try {
+                await fb.authModule.signInWithPopup(fb.auth, provider);
+            } catch (err) {
+                console.error('Login error', err);
+                const msg = (err && err.message) ? err.message : String(err);
+                alert('Error al iniciar sesión. Detalle: ' + msg + '\nMira la consola para más información.');
+            }
+        });
+    }
+
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+            try {
+                await fb.authModule.signOut(fb.auth);
+            } catch (err) {
+                console.error('Logout error', err);
+            }
+        });
+    }
+}
 
 function processSuggestion(c, w, r) {
     log(`Sugerencia: ${c} con ${w} en ${r}.`);
@@ -326,7 +349,7 @@ function renderRanking() {
 }
 
 // handler para limpiar ranking
-document.addEventListener('DOMContentLoaded', () => {
+function setupRankingControls() {
     const btnClear = document.getElementById('btn-clear-ranking');
     if (btnClear) {
         btnClear.addEventListener('click', () => {
@@ -335,13 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderRanking();
         });
     }
-    // render al cargar
-    renderRanking();
-});
-
-function log(msg) {
-    const logDiv = document.getElementById('game-log');
-    logDiv.innerHTML = `<p>> ${msg}</p>` + logDiv.innerHTML;
 }
 
 // Mostrar mensaje grande en el centro temporalmente
@@ -375,15 +391,34 @@ function showCenterMessage(msg, duration = 1800) {
     }, duration);
 }
 
-// Modificamos log para además mostrar en el centro
-const _origLog = log;
+// handler para limpiar ranking
+function setupRankingControls() {
+    const btnClear = document.getElementById('btn-clear-ranking');
+    if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            if (!confirm('¿Borrar todo el ranking?')) return;
+            localStorage.removeItem('tic_rankings');
+            renderRanking();
+        });
+    }
+}
+
 function log(msg) {
     const logDiv = document.getElementById('game-log');
-    logDiv.innerHTML = `<p>> ${msg}</p>` + logDiv.innerHTML;
-    // mostrar en centro (si es relevante)
+    if (logDiv) {
+        logDiv.innerHTML = `<p>> ${msg}</p>` + logDiv.innerHTML;
+    }
     showCenterMessage(msg);
 }
 
-init();
-// Inicializar Firebase Auth en segundo plano (no bloquea el juego)
-initFirebaseAuth();
+window.addEventListener('DOMContentLoaded', () => {
+    setupUI();
+    setupRankingControls();
+    renderRanking();
+    init();
+    initFirebaseAuth();
+
+    if (location.protocol === 'file:') {
+        alert('Firebase Auth no funciona correctamente desde file://. Usa un servidor local como http://localhost y añade ese dominio en Authorized domains de Firebase.');
+    }
+});
