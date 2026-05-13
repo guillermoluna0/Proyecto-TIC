@@ -348,18 +348,6 @@ function renderRanking() {
     });
 }
 
-// handler para limpiar ranking
-function setupRankingControls() {
-    const btnClear = document.getElementById('btn-clear-ranking');
-    if (btnClear) {
-        btnClear.addEventListener('click', () => {
-            if (!confirm('¿Borrar todo el ranking?')) return;
-            localStorage.removeItem('tic_rankings');
-            renderRanking();
-        });
-    }
-}
-
 // Mostrar mensaje grande en el centro temporalmente
 let _centerMsgTimer = null;
 function showCenterMessage(msg, duration = 1800) {
